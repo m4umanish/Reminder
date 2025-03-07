@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminder App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .rainbow-text {
+            background: -webkit-linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-center items-center">
+    <div class="mb-6 w-full max-w-sm px-4">
+        <h1 class="text-4xl font-bold text-center rainbow-text mb-6">Create Your Reminder</h1>
+        <form id="reminder-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-4">
+                <label for="taskDescription" class="block text-gray-700 text-sm font-bold mb-2">Task Description</label>
+                <input type="text" id="taskDescription" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter task description">
+            </div>
+            <div class="mb-4">
+                <label for="dateTime" class="block text-gray-700 text-sm font-bold mb-2">Date and Time</label>
+                <input type="datetime-local" id="dateTime" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-4">
+                <label for="notification" class="block text-gray-700 text-sm font-bold mb-2">Notification</label>
+                <input type="text" id="notification" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="E.g., Email, Alert, etc.">
+            </div>
+            <div class="flex items-center justify-center">
+                <button type="button" id="submitReminder" class="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-purple-500 hover:to-blue-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Submit
+                </button>
+            </div>
+        </form>
+    </div>
+    <div id="output" class="output-section bg-white max-w-sm p-4 mt-6 shadow-md rounded text-gray-700"></div>
+    <footer class="mt-auto text-center p-4">
+        <a href="#" class="text-blue-500 hover:underline">Made with ❤️</a>
+    </footer>
+
+    <script>
+        document.getElementById('submitReminder').addEventListener('click', function() {
+            const taskDescription = document.getElementById('taskDescription').value;
+            const dateTime = document.getElementById('dateTime').value;
+            const notification = document.getElementById('notification').value;
+
+            const substitutedPrompt = `Create a reminder for ${taskDescription} on ${dateTime} with a ${notification} reminder.`;
+
+            const output = document.getElementById('output');
+            output.innerHTML = ''; // Clear previous outputs
+
+            const ws = new WebSocket('wss://backend.buildpicoapps.com/ask_ai_streaming_v2');
+            ws.addEventListener('open', () => {
+                ws.send(
+                    JSON.stringify({
+                        appId: "measure-how",
+                        prompt: substitutedPrompt,
+                    })
+                );
+            });
+
+            ws.addEventListener('message', (event) => {
+                console.log(event.data);
+                output.innerText = `${output.innerText}${event.data}`;
+            });
+
+            ws.addEventListener('close', (event) => {
+                console.log("Connection closed", event.code, event.reason);
+                if (event.code != 1000) {
+                    alert("Oops, we ran into an error. Refresh the page and try again.");
+                }
+            });
+
+            ws.addEventListener('error', (error) => {
+                console.log('WebSocket error', error);
+                alert("Oops, we ran into an error. Refresh the page and try again.");
+            });
+        });
+    </script>
+</body>
+</html>
